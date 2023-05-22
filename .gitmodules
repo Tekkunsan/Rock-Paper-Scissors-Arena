@@ -4,3 +4,6 @@
 [submodule "sokol-zig"]
 	path = sokol-zig
 	url = ./deps/sokol-zig
+[submodule "deps/sokol-tools"]
+	path = deps/sokol-tools
+	url = https://github.com/floooh/sokol-tools-bin.git
