@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "Debug Application",
+            "type": "cppvsdbg",
+            "cwd": "${workspaceFolder}",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/ProjectChuuni.exe",
+        }
+    ]
+}
