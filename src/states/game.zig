@@ -11,19 +11,37 @@ const main = @import("../main.zig");
 const time = main.time;
 const mainState = main.state;
 
+const zaudio = @import("zaudio");
+
 const state = struct {
+    var allocator: std.mem.Allocator = undefined;
     var rnd: rand.DefaultPrng = undefined;
     var objects: ObjectArrayList = undefined;
     var winner: ?renderer.ObjectType = null;
+
+    var sndRock: *zaudio.Sound = undefined;
+    var sndPaper: *zaudio.Sound = undefined;
+    var sndScissors: *zaudio.Sound = undefined;
 };
 
 pub fn init(allocator: std.mem.Allocator) !void {
+    state.allocator = allocator;
     state.objects = ObjectArrayList.init(allocator);
 
     const seed = stime.now();
     state.rnd = rand.DefaultPrng.init(seed);
 
-    for (0..25) |_| {
+    try initObj(.Rock, 30);
+    try initObj(.Paper, 30);
+    try initObj(.Scissors, 30);
+
+    state.sndRock = try mainState.audioEngine.createSoundFromFile("res/sfx/rock.wav", .{});
+    state.sndPaper = try mainState.audioEngine.createSoundFromFile("res/sfx/paper.wav", .{});
+    state.sndScissors = try mainState.audioEngine.createSoundFromFile("res/sfx/scissors.wav", .{});
+}
+
+fn initObj(objType: renderer.ObjectType, count: usize) !void {
+    for (0..count) |_| {
         const x = @intToFloat(f32, state.rnd.random().intRangeAtMost(i32, 32, mainState.width - 32));
         const y = @intToFloat(f32, state.rnd.random().intRangeAtMost(i32, 32, mainState.height - 32));
         const getDir: f32 = if (state.rnd.random().boolean()) 1 else -1;
@@ -32,19 +50,22 @@ pub fn init(allocator: std.mem.Allocator) !void {
         try state.objects.append(.{
             .pos = math.vec2(x, y),
             .vel = math.vec2(velX, velY),
-            .type = @intToEnum(renderer.ObjectType, @mod(state.rnd.random().int(u8), 3)),
+            .type = objType,
         });
     }
 }
 
 pub fn deinit() void {
+    state.sndRock.destroy();
+    state.sndPaper.destroy();
+    state.sndScissors.destroy();
     state.objects.deinit();
 }
 
 // Very Sorry
-pub fn update() void {
+pub fn update() !void {
     for (state.objects.items) |*object| {
-        object.update();
+        try object.update();
         for (state.objects.items) |*other| {
             if (object != other) {
                 const result = object.intersects(other.*);
@@ -66,9 +87,11 @@ pub fn update() void {
                             switch (other.type) {
                                 .Paper => {
                                     object.type = .Paper;
+                                    try state.sndPaper.start();
                                 },
                                 .Scissors => {
                                     object.type = .Rock;
+                                    try state.sndRock.start();
                                 },
                                 else => {},
                             }
@@ -77,9 +100,11 @@ pub fn update() void {
                             switch (other.type) {
                                 .Rock => {
                                     object.type = .Paper;
+                                    try state.sndPaper.start();
                                 },
                                 .Scissors => {
                                     object.type = .Scissors;
+                                    try state.sndScissors.start();
                                 },
                                 else => {},
                             }
@@ -88,9 +113,11 @@ pub fn update() void {
                             switch (other.type) {
                                 .Rock => {
                                     object.type = .Rock;
+                                    try state.sndRock.start();
                                 },
                                 .Paper => {
                                     object.type = .Scissors;
+                                    try state.sndScissors.start();
                                 },
                                 else => {},
                             }
@@ -123,6 +150,11 @@ pub fn update() void {
 
     if (state.winner) |winner| {
         std.log.info("Winnder: {}", .{winner});
+        state.objects.clearAndFree();
+        try initObj(.Rock, 30);
+        try initObj(.Paper, 30);
+        try initObj(.Scissors, 30);
+        state.winner = null;
     }
 }
 
@@ -133,15 +165,40 @@ pub fn draw() void {
 }
 
 const ObjectArrayList = std.ArrayList(Object);
+const ObjectID = usize;
+const ObjectIDArrayList = std.ArrayList(ObjectID);
 
 const Object = struct {
     pos: math.Vec2 = math.vec2(0, 0),
     vel: math.Vec2 = math.vec2(0, 0),
     type: renderer.ObjectType = .Rock,
-    target: Object,
+    target: ?ObjectID = null,
 
-    pub fn update(self: *Object) void {
+    pub fn update(self: *Object) !void {
         const dtf32 = @floatCast(f32, time.dt);
+
+        if (self.target) |target| {
+            const obj: Object = state.objects.items[target];
+            const obj_pos: math.Vec2 = obj.pos;
+            var diff = obj_pos - self.pos;
+            diff = math.vec2Norm(diff);
+            self.vel = diff * math.vec2(3, 3);
+
+            if (obj.type == self.type) self.target = null;
+        } else {
+            switch (self.type) {
+                .Rock => {
+                    self.target = followRandom(try objsFilterType(state.objects, .Scissors));
+                },
+                .Paper => {
+                    self.target = followRandom(try objsFilterType(state.objects, .Rock));
+                },
+                .Scissors => {
+                    self.target = followRandom(try objsFilterType(state.objects, .Paper));
+                },
+            }
+        }
+
         self.pos += self.vel * math.vec2(dtf32, dtf32);
 
         if (self.pos[0] < 16 or self.pos[0] > @intToFloat(f32, mainState.width) - 16) {
@@ -179,6 +236,24 @@ const Object = struct {
         }
 
         return result;
+    }
+
+    fn followRandom(objsToChoose: ObjectIDArrayList) ?ObjectID {
+        defer objsToChoose.deinit();
+        var len = objsToChoose.items.len;
+        if (len == 0) return null;
+        return objsToChoose.items[state.rnd.random().intRangeAtMost(usize, 0, len - 1)];
+    }
+
+    fn objsFilterType(objects: ObjectArrayList, objType: renderer.ObjectType) !ObjectIDArrayList {
+        var ids = ObjectIDArrayList.init(state.allocator);
+        for (objects.items, 0..) |obj, i| {
+            if (obj.type == objType) {
+                try ids.append(i);
+            }
+        }
+
+        return ids;
     }
 };
 

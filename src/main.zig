@@ -9,6 +9,7 @@ const stime = sokol.time;
 const log = std.log;
 
 const zstbi = @import("zstbi");
+const zaudio = @import("zaudio");
 const math = @import("math.zig");
 const game = @import("states/game.zig");
 
@@ -20,8 +21,9 @@ pub const time = struct {
 };
 
 pub const state = struct {
-    pub var width: i32 = 1024;
-    pub var height: i32 = 576;
+    pub var width: i32 = 1280;
+    pub var height: i32 = 720;
+    pub var audioEngine: *zaudio.Engine = undefined;
 };
 
 var gpAllocator: std.heap.GeneralPurposeAllocator(.{}) = undefined;
@@ -35,6 +37,10 @@ export fn init() void {
     stime.setup();
     time.last = stime.now();
 
+    zaudio.init(gpAllocator.allocator());
+
+    state.audioEngine = zaudio.Engine.create(null) catch unreachable;
+
     game.init(allocator) catch |e| {
         log.err("Failed to initialize game: {}", .{e});
     };
@@ -42,7 +48,9 @@ export fn init() void {
 
 export fn frame() void {
     time.dt = stime.sec(stime.laptime(&time.last)) * 10; // I also don't know what I'm doing
-    game.update();
+    game.update() catch |e| {
+        log.info("Failed: {}", .{e});
+    };
 
     renderer.begin();
 
@@ -55,6 +63,8 @@ export fn frame() void {
 
 export fn cleanup() void {
     game.deinit();
+    state.audioEngine.destroy();
+    zaudio.deinit();
     renderer.deinit();
     defer switch (gpAllocator.deinit()) {
         .ok => std.log.info("Successfully Not Leak Memory LMAO", .{}),

@@ -1,6 +1,7 @@
 const std = @import("std");
 const sokol = @import("deps/sokol-zig/build.zig");
 const zstbi = @import("deps/zstbi/build.zig");
+const zaudio = @import("deps/zaudio/build.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -21,10 +22,11 @@ pub fn build(b: *std.Build) void {
     exe.addModule("sokol", sokolModule);
     exe.linkLibrary(sokolBuild);
 
-    exe.addIncludePath("deps/nuklear/");
-
     const zstbiPkg = zstbi.package(b, target, optimize, .{});
     zstbiPkg.link(exe);
+
+    const zaudioPkg = zaudio.package(b, target, optimize, .{});
+    zaudioPkg.link(exe);
 
     b.installArtifact(exe);
 
