@@ -4,8 +4,9 @@ pub const Package = struct {
     zstbi: *std.Build.Module,
     zstbi_c_cpp: *std.Build.CompileStep,
 
+    /// link needs to be true unless you want a custom linker (emscripten)
     pub fn link(pkg: Package, exe: *std.Build.CompileStep) void {
-        exe.linkLibrary(pkg.zstbi_c_cpp);
+        // exe.linkLibrary(pkg.zstbi_c_cpp);
         exe.addModule("zstbi", pkg.zstbi);
     }
 };
@@ -14,7 +15,6 @@ pub fn package(
     b: *std.Build,
     target: std.zig.CrossTarget,
     optimize: std.builtin.Mode,
-    _: struct {},
 ) Package {
     const zstbi = b.createModule(.{
         .source_file = .{ .path = thisDir() ++ "/src/zstbi.zig" },

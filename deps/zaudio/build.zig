@@ -4,8 +4,9 @@ pub const Package = struct {
     zaudio: *std.Build.Module,
     zaudio_c_cpp: *std.Build.CompileStep,
 
+    /// link needs to be true unless you want a custom linker (emscripten)
     pub fn link(pkg: Package, exe: *std.Build.CompileStep) void {
-        exe.linkLibrary(pkg.zaudio_c_cpp);
+        // exe.linkLibrary(pkg.zaudio_c_cpp);
         exe.addModule("zaudio", pkg.zaudio);
     }
 };
@@ -14,7 +15,6 @@ pub fn package(
     b: *std.Build,
     target: std.zig.CrossTarget,
     optimize: std.builtin.Mode,
-    _: struct {},
 ) Package {
     const zaudio = b.createModule(.{
         .source_file = .{ .path = thisDir() ++ "/src/zaudio.zig" },

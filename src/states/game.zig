@@ -200,7 +200,6 @@ const Object = struct {
         }
 
         self.pos += self.vel * math.vec2(dtf32, dtf32);
-
         if (self.pos[0] < 16 or self.pos[0] > @intToFloat(f32, mainState.width) - 16) {
             self.vel[0] *= -1;
         }

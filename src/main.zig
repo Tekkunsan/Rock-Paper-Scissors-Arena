@@ -67,8 +67,12 @@ export fn cleanup() void {
     zaudio.deinit();
     renderer.deinit();
     defer switch (gpAllocator.deinit()) {
-        .ok => std.log.info("Successfully Not Leak Memory LMAO", .{}),
-        .leak => std.log.info("Leak", .{}),
+        .ok => {
+            std.log.info("Successfully Not Leak Memory LMAO", .{});
+        },
+        .leak => {
+            std.log.info("Leak", .{});
+        },
     };
 }
 
@@ -82,10 +86,24 @@ pub fn main() !void {
         .icon = .{
             .sokol_default = true,
         },
-        .window_title = "Hello World",
+        .window_title = "Ligmab",
         .logger = .{
             .func = slog.func,
         },
         .win32_console_attach = true,
+    });
+}
+
+export fn emsc_main() void {
+    sapp.run(.{
+        .init_cb = init,
+        .frame_cb = frame,
+        .cleanup_cb = cleanup,
+        .width = state.width,
+        .height = state.height,
+        .window_title = "Ligma",
+        .logger = .{
+            .func = slog.func,
+        },
     });
 }
