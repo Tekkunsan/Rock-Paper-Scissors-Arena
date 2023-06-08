@@ -60,17 +60,21 @@ pub fn buildWasm(b: *std.Build, target: std.zig.CrossTarget) !void {
     defer b.allocator.free(include_path);
 
     // You need to build the game on freestanding, IDK why
-    std.log.info("Build the game on wasm32-freestanding and {s}", .{@tagName(optimize)});
-    const libgame = b.addSharedLibrary(.{
+    std.log.info("Build the game on {s}-{s} and {s}", .{
+        @tagName(wasm32TargetFreestanding.getCpu().arch),
+        @tagName(wasm32TargetFreestanding.os_tag.?),
+        @tagName(optimize),
+    });
+    const libgame = b.addStaticLibrary(.{
         .name = "game",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = wasm32TargetFreestanding,
         .optimize = optimize,
-        .use_llvm = false,
-        .use_lld = false,
+        // .use_llvm = false,
+        // .use_lld = false,
     });
 
-    // libgame.rdynamic = true;
+    libgame.rdynamic = true;
     libgame.import_symbols = true;
 
     // Build The dependencies using wasm32-emscripten
@@ -90,7 +94,7 @@ pub fn buildWasm(b: *std.Build, target: std.zig.CrossTarget) !void {
 
     const emcc = b.addSystemCommand(&.{
         emcc_path,
-        "-OS",
+        "-Os",
         "--closure",
         "1",
         "src/emscripten/entry.c",
@@ -109,7 +113,9 @@ pub fn buildWasm(b: *std.Build, target: std.zig.CrossTarget) !void {
     });
     emcc.step.dependOn(&libgame.step);
 
-    const emrun = b.addSystemCommand(&.{ emrun_path, "zig-out/web/pacman.html" });
+    b.getInstallStep().dependOn(&emcc.step);
+
+    const emrun = b.addSystemCommand(&.{ emrun_path, "zig-out/web/index.html" });
     emrun.step.dependOn(&emcc.step);
     b.step("run", "Run pacman").dependOn(&emrun.step);
 }
@@ -134,7 +140,7 @@ fn initModules(
         sokolBuild.addIncludePath(path);
     }
 
-    // exe.linkLibrary(sokolBuild);
+    exe.linkLibrary(sokolBuild);
 
     const zstbiPkg = zstbi.package(b, target, optimize);
     if (includes) |path| {

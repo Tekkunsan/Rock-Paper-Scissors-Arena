@@ -41,16 +41,19 @@ export fn init() void {
 
     state.audioEngine = zaudio.Engine.create(null) catch unreachable;
 
-    game.init(allocator) catch |e| {
-        log.err("Failed to initialize game: {}", .{e});
-    };
+    // game.init(allocator) catch |e| {
+    //     log.err("Failed to initialize game: {}", .{e});
+    // };
+    game.init(allocator) catch unreachable;
 }
 
 export fn frame() void {
     time.dt = stime.sec(stime.laptime(&time.last)) * 10; // I also don't know what I'm doing
-    game.update() catch |e| {
-        log.info("Failed: {}", .{e});
-    };
+    // game.update() catch |e| {
+    //     log.info("Failed: {}", .{e});
+    // };
+
+    game.update() catch unreachable;
 
     renderer.begin();
 
@@ -68,31 +71,31 @@ export fn cleanup() void {
     renderer.deinit();
     defer switch (gpAllocator.deinit()) {
         .ok => {
-            std.log.info("Successfully Not Leak Memory LMAO", .{});
+            // log.info("Successfully Not Leak Memory LMAO", .{});
         },
         .leak => {
-            std.log.info("Leak", .{});
+            // log.info("Leak", .{});
         },
     };
 }
 
-pub fn main() !void {
-    sapp.run(.{
-        .init_cb = init,
-        .frame_cb = frame,
-        .cleanup_cb = cleanup,
-        .width = state.width,
-        .height = state.height,
-        .icon = .{
-            .sokol_default = true,
-        },
-        .window_title = "Ligmab",
-        .logger = .{
-            .func = slog.func,
-        },
-        .win32_console_attach = true,
-    });
-}
+// pub fn main() !void {
+//     sapp.run(.{
+//         .init_cb = init,
+//         .frame_cb = frame,
+//         .cleanup_cb = cleanup,
+//         .width = state.width,
+//         .height = state.height,
+//         .icon = .{
+//             .sokol_default = true,
+//         },
+//         .window_title = "Ligmab",
+//         .logger = .{
+//             .func = slog.func,
+//         },
+//         .win32_console_attach = true,
+//     });
+// }
 
 export fn emsc_main() void {
     sapp.run(.{

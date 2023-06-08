@@ -88,7 +88,7 @@ pub fn init(allocator: std.mem.Allocator) void {
     // END Temporary
 
     setClearColor(0, 0, 0, 0);
-    log.info("Backend: {}", .{sg.queryBackend()});
+    // log.info("Backend: {}", .{sg.queryBackend()});
 
     state.bind.fs_images[basic_shader.SLOT_tex] = sg.makeImage(img_desc);
     const shader = sg.makeShader(basic_shader.basicShaderShaderDesc(sg.queryBackend()));

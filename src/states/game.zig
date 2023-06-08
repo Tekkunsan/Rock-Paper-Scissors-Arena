@@ -149,7 +149,8 @@ pub fn update() !void {
     }
 
     if (state.winner) |winner| {
-        std.log.info("Winnder: {}", .{winner});
+        _ = winner;
+        // std.log.info("Winnder: {}", .{winner});
         state.objects.clearAndFree();
         try initObj(.Rock, 30);
         try initObj(.Paper, 30);

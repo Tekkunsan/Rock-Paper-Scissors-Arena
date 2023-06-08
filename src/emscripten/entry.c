@@ -7,8 +7,8 @@ uintptr_t __stack_chk_guard = 0xABBABABA;
 _Noreturn void __stack_chk_fail(void) { abort(); };
 
 extern void emsc_main(void);
-
-int main() {
+int main()
+{
     emsc_main();
     return 0;
 }
