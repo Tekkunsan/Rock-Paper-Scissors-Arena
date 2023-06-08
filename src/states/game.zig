@@ -35,9 +35,9 @@ pub fn init(allocator: std.mem.Allocator) !void {
     try initObj(.Paper, 30);
     try initObj(.Scissors, 30);
 
-    state.sndRock = try mainState.audioEngine.createSoundFromFile("res/sfx/rock.wav", .{});
-    state.sndPaper = try mainState.audioEngine.createSoundFromFile("res/sfx/paper.wav", .{});
-    state.sndScissors = try mainState.audioEngine.createSoundFromFile("res/sfx/scissors.wav", .{});
+    // state.sndRock = try mainState.audioEngine.createSoundFromFile("res/sfx/rock.wav", .{});
+    // state.sndPaper = try mainState.audioEngine.createSoundFromFile("res/sfx/paper.wav", .{});
+    // state.sndScissors = try mainState.audioEngine.createSoundFromFile("res/sfx/scissors.wav", .{});
 }
 
 fn initObj(objType: renderer.ObjectType, count: usize) !void {
@@ -56,9 +56,9 @@ fn initObj(objType: renderer.ObjectType, count: usize) !void {
 }
 
 pub fn deinit() void {
-    state.sndRock.destroy();
-    state.sndPaper.destroy();
-    state.sndScissors.destroy();
+    // state.sndRock.destroy();
+    // state.sndPaper.destroy();
+    // state.sndScissors.destroy();
     state.objects.deinit();
 }
 
@@ -87,11 +87,11 @@ pub fn update() !void {
                             switch (other.type) {
                                 .Paper => {
                                     object.type = .Paper;
-                                    try state.sndPaper.start();
+                                    // try state.sndPaper.start();
                                 },
                                 .Scissors => {
                                     object.type = .Rock;
-                                    try state.sndRock.start();
+                                    // try state.sndRock.start();
                                 },
                                 else => {},
                             }
@@ -100,11 +100,11 @@ pub fn update() !void {
                             switch (other.type) {
                                 .Rock => {
                                     object.type = .Paper;
-                                    try state.sndPaper.start();
+                                    // try state.sndPaper.start();
                                 },
                                 .Scissors => {
                                     object.type = .Scissors;
-                                    try state.sndScissors.start();
+                                    // try state.sndScissors.start();
                                 },
                                 else => {},
                             }
@@ -113,11 +113,11 @@ pub fn update() !void {
                             switch (other.type) {
                                 .Rock => {
                                     object.type = .Rock;
-                                    try state.sndRock.start();
+                                    // try state.sndRock.start();
                                 },
                                 .Paper => {
                                     object.type = .Scissors;
-                                    try state.sndScissors.start();
+                                    // try state.sndScissors.start();
                                 },
                                 else => {},
                             }

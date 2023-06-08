@@ -4,7 +4,7 @@ pub const Package = struct {
     zstbi: *std.Build.Module,
     zstbi_c_cpp: *std.Build.CompileStep,
 
-    /// link needs to be true unless you want a custom linker (emscripten)
+    /// link needs to be true unless you want a custom linker (emcripten)
     pub fn link(pkg: Package, exe: *std.Build.CompileStep) void {
         exe.linkLibrary(pkg.zstbi_c_cpp);
         exe.addModule("zstbi", pkg.zstbi);

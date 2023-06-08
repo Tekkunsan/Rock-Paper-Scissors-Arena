@@ -73,8 +73,9 @@ pub fn init(allocator: std.mem.Allocator) void {
         .data = sg.asRange(state.indices[0..]),
     });
 
+    const te = @embedFile("res/sheet.png");
     // TODO Temporary
-    var img = zstbi.Image.loadFromFile("res/sheet.png", 4) catch unreachable;
+    var img = zstbi.Image.loadFromMemory(te, 4) catch unreachable;
     defer img.deinit();
 
     state.imgDimension[0] = @intToFloat(f32, img.width);

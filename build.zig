@@ -28,7 +28,7 @@ pub fn buildNative(b: *std.Build, target: std.zig.CrossTarget, optimize: std.bui
         .optimize = optimize,
     });
 
-    initModules(b, exe, target, optimize, false, null);
+    _ = initModules(b, exe, target, optimize, false, null);
 
     b.installArtifact(exe);
 
@@ -70,16 +70,11 @@ pub fn buildWasm(b: *std.Build, target: std.zig.CrossTarget) !void {
         .root_source_file = .{ .path = "src/main.zig" },
         .target = wasm32TargetFreestanding,
         .optimize = optimize,
-        // .use_llvm = false,
-        // .use_lld = false,
     });
-
-    libgame.rdynamic = true;
-    libgame.import_symbols = true;
 
     // Build The dependencies using wasm32-emscripten
     std.log.info("Building Dependencies on Emscripten", .{});
-    initModules(b, libgame, target, optimize, true, include_path);
+    const modules = initModules(b, libgame, target, optimize, true, include_path);
 
     b.installArtifact(libgame);
 
@@ -112,13 +107,21 @@ pub fn buildWasm(b: *std.Build, target: std.zig.CrossTarget) !void {
         "-sEXPORTED_FUNCTIONS=['_malloc','_free','_main']",
     });
     emcc.step.dependOn(&libgame.step);
-
-    b.getInstallStep().dependOn(&emcc.step);
+    emcc.step.dependOn(&modules.sokol.step);
+    emcc.step.dependOn(&modules.zstbi.step);
+    emcc.step.dependOn(&modules.zaudio.step);
+    emcc.step.dependOn(b.getInstallStep());
 
     const emrun = b.addSystemCommand(&.{ emrun_path, "zig-out/web/index.html" });
     emrun.step.dependOn(&emcc.step);
     b.step("run", "Run pacman").dependOn(&emrun.step);
 }
+
+const DependenciesLibs = struct {
+    sokol: *std.Build.Step.Compile,
+    zaudio: *std.Build.Step.Compile,
+    zstbi: *std.Build.Step.Compile,
+};
 
 fn initModules(
     b: *std.Build,
@@ -127,7 +130,7 @@ fn initModules(
     optimize: std.builtin.Mode,
     targetWasm: bool,
     includes: ?[]u8,
-) void {
+) DependenciesLibs {
     const sokolBuild = sokol.buildSokol(b, target, optimize, .{
         .backend = .gles2,
     }, "deps/sokol-zig/");
@@ -160,4 +163,10 @@ fn initModules(
         b.installArtifact(zstbiPkg.zstbi_c_cpp);
         b.installArtifact(zaudioPkg.zaudio_c_cpp);
     }
+
+    return .{
+        .sokol = sokolBuild,
+        .zstbi = zstbiPkg.zstbi_c_cpp,
+        .zaudio = zaudioPkg.zaudio_c_cpp,
+    };
 }
